@@ -10,6 +10,7 @@ use tracing_subscriber::FmtSubscriber;
 use tui::backend::{Backend, CrosstermBackend};
 use tui::layout::Alignment;
 use tui::{Frame, Terminal};
+use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, BorderType};
 // use tracing_subscriber::filter::
 // use crossterm::
@@ -69,7 +70,8 @@ fn ui<B: Backend>(f: &mut Frame<B>){
         .borders(Borders::ALL)
         .title("Rumodoro")
         .title_alignment(Alignment::Center)
-        .border_type(BorderType::Double);
+        .border_type(BorderType::Double)
+        .border_style(Style::default().fg(Color::LightCyan));
     f.render_widget(clock_block, size);
 
 
