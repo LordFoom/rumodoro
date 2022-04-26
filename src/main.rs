@@ -68,7 +68,7 @@ fn ui<B: Backend>(f: &mut Frame<B>){
 
     let clock_block = Block::default()
         .borders(Borders::ALL)
-        .title("Rumodoro")
+        .title(" Rumodoro ")
         .title_alignment(Alignment::Center)
         .border_type(BorderType::Double)
         .border_style(Style::default().fg(Color::LightCyan));
