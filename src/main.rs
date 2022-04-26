@@ -79,7 +79,8 @@ fn ui<B: Backend>(f: &mut Frame<B>){
     let chunks = Layout::default()
         .direction(Vertical)
         .margin(4)
-        .constraints([Constraint::Percentage(80), Constraint::Percentage(20)]);
+        .constraints([Constraint::Percentage(80), Constraint::Percentage(20)])
+        .split(f.size());
 
 
 }
