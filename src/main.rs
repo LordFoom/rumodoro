@@ -8,8 +8,9 @@ use crossterm::{event, execute};
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use tui::backend::{Backend, CrosstermBackend};
-use tui::layout::Alignment;
+use tui::layout::{Alignment, Constraint, Layout};
 use tui::{Frame, Terminal};
+use tui::layout::Direction::Vertical;
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, BorderType};
 // use tracing_subscriber::filter::
@@ -66,13 +67,19 @@ fn run_the_jewels<B: Backend>(terminal: &mut Terminal<B>) -> Result<()>{
 fn ui<B: Backend>(f: &mut Frame<B>){
     let size = f.size();
 
-    let clock_block = Block::default()
+    let surround_block = Block::default()
         .borders(Borders::ALL)
         .title(" Rumodoro ")
         .title_alignment(Alignment::Center)
         .border_type(BorderType::Double)
         .border_style(Style::default().fg(Color::LightCyan));
-    f.render_widget(clock_block, size);
+    f.render_widget(surround_block, size);
+
+    //we going to put the clock block and the button block in here
+    let chunks = Layout::default()
+        .direction(Vertical)
+        .margin(4)
+        .constraints([Constraint::Percentage(80), Constraint::Percentage(20)]);
 
 
 }
