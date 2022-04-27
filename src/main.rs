@@ -1,6 +1,5 @@
 use std::io;
-use std::io::Read;
-use color_eyre::eyre::{eyre, Report, Result};
+use color_eyre::eyre::{Result};
 use std::sync::Once;
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
@@ -54,7 +53,7 @@ fn setup(verbose:bool)->Result<()>{
 
 fn run_the_jewels<B: Backend>(terminal: &mut Terminal<B>) -> Result<()>{
    loop{
-       terminal.draw(ui);
+       terminal.draw(ui)?;
 
        if let Event::Key(key) = event::read()? {
           if let KeyCode::Char('q') = key.code{
@@ -64,7 +63,7 @@ fn run_the_jewels<B: Backend>(terminal: &mut Terminal<B>) -> Result<()>{
    }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>){
+fn ui<B: Backend>(f: &mut Frame<B>) {
     let size = f.size();
 
     let surround_block = Block::default()
@@ -78,11 +77,22 @@ fn ui<B: Backend>(f: &mut Frame<B>){
     //we going to put the clock block and the button block in here
     let chunks = Layout::default()
         .direction(Vertical)
-        .margin(4)
+        .margin(1)
         .constraints([Constraint::Percentage(80), Constraint::Percentage(20)])
         .split(f.size());
 
+    let clock_block = Block::default()
+        .borders(Borders::ALL)
+        // .title("")
+        .border_style(Style::default().fg(Color::Green))
+        .border_type(BorderType::Thick);
+    f.render_widget(clock_block, chunks[0]);
 
+    let button_bar = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Red))
+        .border_type(BorderType::Rounded);
+    f.render_widget(button_bar, chunks[1]);
 }
 
 fn main() -> Result<()>  {
@@ -99,7 +109,7 @@ fn main() -> Result<()>  {
     // create app and run it
     let res = run_the_jewels(&mut terminal);
     //turn off the app, m'sieur
-    disable_raw_mode();
+    disable_raw_mode()?;
     execute!(
         terminal.backend_mut(),
         LeaveAlternateScreen,
