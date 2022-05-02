@@ -29,10 +29,13 @@ long_about = None,
 )]
 struct Rumodoro{
     ///This is the working time, in minutes
+    #[clap(short, long, default_value = "25")]
     long_time: u8,
     ///This is the break time, in minutes
+    #[clap(short, long, default_value = "5")]
     short_time: u8,
     ///verbose, means logs
+    #[clap(short, long)]
     verbose: bool,
 }
 
