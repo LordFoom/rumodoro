@@ -9,17 +9,43 @@ use tracing_subscriber::FmtSubscriber;
 use tui::backend::{Backend, CrosstermBackend};
 use tui::layout::{Alignment, Constraint, Layout};
 use tui::{Frame, Terminal};
-use tui::layout::Direction::Vertical;
+use tui::layout::Direction::{Horizontal, Vertical};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, BorderType};
+use clap::Parser;
 // use tracing_subscriber::filter::
 // use crossterm::
 
+///Command line struct
+/// TODO Add flags and properties
+#[derive(Parser)]
+#[clap(
+author = "Foom",
+version = "1.0",
+about = "Pomodoro in the terminal, written in rust",
+long_about = None,
+
+
+)]
 struct Rumodoro{
-    // display:String,
-    //
-    // start_button: button::State,
-    // stop_button: button::State,
+    ///This is the working time, in minutes
+    long_time: u8,
+    ///This is the break time, in minutes
+    short_time: u8,
+    ///verbose, means logs
+    verbose: bool,
+}
+
+///We default to to 25 minutes work, to 5 minute break
+/// TODO put in the extra long push and break
+impl Default for Rumodoro{
+    fn default() -> Self {
+        Self{
+            long_time:25,
+            short_time:5,
+            verbose:false,
+        }
+    }
 }
 
 static INIT: Once = Once::new();
@@ -93,6 +119,17 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         .border_style(Style::default().fg(Color::Red))
         .border_type(BorderType::Rounded);
     f.render_widget(button_bar, chunks[1]);
+
+    let buttons_text = ["Start", "Stop", "Reset", "Pause"];//need better mnemonics than just the first one
+    //a for start
+    //o for stop
+    //r for reset
+    //p for pause
+    //and mouse support?
+    let button_chunks = Layout::default()
+        .direction(Horizontal)
+        .margin(1)
+        .constraints([Constraint::Percentage(25)]);
 }
 
 fn main() -> Result<()>  {
