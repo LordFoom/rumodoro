@@ -10,9 +10,10 @@ use tui::backend::{Backend, CrosstermBackend};
 use tui::layout::{Alignment, Constraint, Layout};
 use tui::{Frame, Terminal};
 use tui::layout::Direction::{Horizontal, Vertical};
-use tui::style::{Color, Style};
+use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders, BorderType};
 use clap::Parser;
+use tui::text::{Span, Spans};
 // use tracing_subscriber::filter::
 // use crossterm::
 
@@ -123,7 +124,21 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         .border_type(BorderType::Rounded);
     f.render_widget(button_bar, chunks[1]);
 
-    let buttons_text = ["Start", "Stop", "Reset", "Pause"];//need better mnemonics than just the first one
+    // let buttons_text = ["Start", "Stop", "Reset", "Pause"];//need better mnemonics than just the first one
+    let mut start_btn = vec![
+                Spans::from(Span::styled("[ St", Style::default().fg(Color::LightYellow))),
+                Spans::from(Span::styled("a", Style::default().fg(Color::Yellow).add_modifier(Modifier::UNDERLINED))),
+                Spans::from(Span::styled("rt ]", Style::default().fg(Color::LightYellow))),
+            ];
+    let mut stop_btn = vec![
+        Spans::from(Span::styled("[ St", Style::default().fg(Color::LightYellow))),
+        Spans::from(Span::styled("o", Style::default().fg(Color::Yellow).add_modifier(Modifier::UNDERLINED))),
+        Spans::from(Span::styled("p ]", Style::default().fg(Color::LightYellow))),
+    ];
+
+    let mut buttons = Vec::new();
+    buttons.append(&mut start_btn);
+    buttons.append(&mut stop_btn);
     //a for start
     //o for stop
     //r for reset
