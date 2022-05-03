@@ -20,6 +20,7 @@ use clap::Parser;
 /// TODO Add flags and properties
 #[derive(Parser)]
 #[clap(
+name = "Rumodoro",
 author = "Foom",
 version = "1.0",
 about = "Pomodoro in the terminal, written in rust",
@@ -54,7 +55,6 @@ impl Default for Rumodoro{
 static INIT: Once = Once::new();
 
 fn setup(verbose:bool)->Result<()>{
-    color_eyre::install()?;
     INIT.call_once(|| {
         let log_level = if verbose {
             Level::TRACE
@@ -137,7 +137,9 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
 
 fn main() -> Result<()>  {
     //todo we gonna clap this!
-    setup(true)?;
+    color_eyre::install()?;
+    let rmd = Rumodoro::parse();
+    setup(rmd.verbose)?;
 
     //enable the app
     enable_raw_mode()?;
