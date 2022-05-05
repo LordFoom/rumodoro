@@ -116,7 +116,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         .borders(Borders::ALL)
         // .title("")
         .border_style(Style::default().fg(Color::Green))
-        .border_type(BorderType::Thick);
+        .border_type(BorderType::Rounded);
     f.render_widget(clock_block, chunks[0]);
 
     let btn_clr = Color::LightYellow;
