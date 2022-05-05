@@ -109,7 +109,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
     let chunks = Layout::default()
         .direction(Vertical)
         .margin(1)
-        .constraints([Constraint::Percentage(80), Constraint::Percentage(20)])
+        .constraints([Constraint::Percentage(90), Constraint::Percentage(10)])
         .split(f.size());
 
     let clock_block = Block::default()
@@ -138,9 +138,17 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         Span::styled("eset ]", Style::default().fg(btn_clr)),
 
     ];
+    let mut quit_btn = vec![
+        Span::styled("[ ", Style::default().fg(btn_clr)),
+        Span::styled("Q", Style::default().fg(btn_clr).add_modifier(Modifier::UNDERLINED)),
+        Span::styled("uit ]", Style::default().fg(btn_clr)),
+
+    ];
     let mut buttons = Vec::new();
     buttons.append(&mut start_btn);
     buttons.append(&mut stop_btn);
+    buttons.append(&mut reset_btn);
+    buttons.append(&mut quit_btn);
 
     let button_spans = Spans::from(buttons);
     //a for start
