@@ -119,18 +119,25 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         .border_type(BorderType::Thick);
     f.render_widget(clock_block, chunks[0]);
 
+    let btn_clr = Color::LightYellow;
     // let buttons_text = ["Start", "Stop", "Reset", "Pause"];//need better mnemonics than just the first one
     let mut start_btn = vec![
-                Span::styled("[ St", Style::default().fg(Color::LightYellow)),
-                Span::styled("a", Style::default().fg(Color::Yellow).add_modifier(Modifier::UNDERLINED)),
-                Span::styled("rt ]", Style::default().fg(Color::LightYellow)),
+                Span::styled("[ St", Style::default().fg(btn_clr)),
+                Span::styled("a", Style::default().fg(btn_clr).add_modifier(Modifier::UNDERLINED)),
+                Span::styled("rt ]", Style::default().fg(btn_clr)),
             ];
     let mut stop_btn = vec![
-        Span::styled("[ St", Style::default().fg(Color::LightYellow)),
-        Span::styled("o", Style::default().fg(Color::Yellow).add_modifier(Modifier::UNDERLINED)),
-        Span::styled("p ]", Style::default().fg(Color::LightYellow)),
+        Span::styled("[ St", Style::default().fg(btn_clr)),
+        Span::styled("o", Style::default().fg(btn_clr).add_modifier(Modifier::UNDERLINED)),
+        Span::styled("p ]", Style::default().fg(btn_clr)),
     ];
 
+    let mut reset_btn = vec![
+        Span::styled("[ ", Style::default().fg(btn_clr)),
+        Span::styled("R", Style::default().fg(btn_clr).add_modifier(Modifier::UNDERLINED)),
+        Span::styled("eset ]", Style::default().fg(btn_clr)),
+
+    ];
     let mut buttons = Vec::new();
     buttons.append(&mut start_btn);
     buttons.append(&mut stop_btn);
