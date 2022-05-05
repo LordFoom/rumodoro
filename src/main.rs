@@ -142,10 +142,11 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
     //p for pause
     //and mouse support?
     let button_bar = Paragraph::new(button_spans)
+        .alignment(Alignment::Center)
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Red))
+                .border_style(Style::default().fg(Color::LightRed))
                 .border_type(BorderType::Rounded)
         );
     f.render_widget(button_bar, chunks[1]);
