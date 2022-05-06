@@ -11,7 +11,7 @@ use tracing_subscriber::fmt::writer::MakeWriterExt;
 // use crossterm::
 
 ///Command line struct
-#[derive(Parser, Clone, Data, Lens)]
+#[derive(Parser, Clone)]
 #[clap(
 name = "Rumodoro",
 author = "Foom",
@@ -31,7 +31,6 @@ struct Rumodoro{
     ///verbose, means logs
     #[clap(short, long)]
     verbose: bool,
-    current_phase: String,
 }
 
 ///Possible phases for the clock
@@ -39,6 +38,11 @@ struct Rumodoro{
 enum Phases{
     Paused, Work, Break,
 
+}
+
+#[derive(Clone, Data, Lens)]
+struct RumodoroState{
+    current_phase: String,
 }
 
 ///We default to to 25 minutes work, to 5 minute break
@@ -49,7 +53,6 @@ impl Default for Rumodoro{
             long_time: 25,
             short_time: 5,
             verbose: false,
-            current_phase: "Paused".into(),
         }
     }
 }
@@ -170,18 +173,18 @@ fn setup(verbose:bool)->Result<()>{
 // }
 
 fn main() -> Result<()>  {
-    //todo we gonna clap this!
     color_eyre::install()?;
     let rmd = Rumodoro::parse();
     setup(rmd.verbose)?;
 
-    let main_window = WindowDesc::new(build_root_widget)
+    let main_window = WindowDesc::new(build_root_widget())
         .title("R U M O D O R O")
         .window_size((400.0, 400.0));
 
 
+    let state = RumodoroState { current_phase: "Paused".into() };
     AppLauncher::with_window(main_window)
-        .launch(rmd)
+        .launch(state)
         .expect("Failed to launch window, m'sieur");
 
 
@@ -209,14 +212,14 @@ fn main() -> Result<()>  {
     Ok(())
 }
 
-fn build_root_widget() -> impl Widget<Rumodoro>{
+fn build_root_widget() -> impl Widget<RumodoroState>{
     //a label that will determine its text based on the current app data
-    let label = Label::new(|data: &Rumodoro, _env: &Env| format!("{}!", data.current_phase));
+    let label = Label::new(|data: &RumodoroState, _env: &Env| format!("{}!", data.current_phase));
     //a textbox that modifies `name`
     let textbox = TextBox::new()
         .with_placeholder("What phase are we in?")
         .fix_width(200.0)
-        .lens(Rumodoro::current_phase);
+        .lens(RumodoroState::current_phase);
 
     //vertical with padding
     let layout = Flex::column()
