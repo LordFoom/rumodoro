@@ -36,7 +36,7 @@ struct RumodoroConfig {
 }
 
 ///Possible phases for the clock
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Data)]
 enum Phase{
     Paused, Work, Break,
 
@@ -53,27 +53,32 @@ impl fmt::Display for Phase{
 struct RumodoroState{
     current_phase: Phase,
     current_start_moment: Instant,
-    current_end_moment: Option<Instant>,
-    config: RumodoroConfig,
 }
 
 impl RumodoroState{
-    fn display_time(&self, rc: RumodoroConfig) ->String{
-        match self.current_phase{
-           Phase::Paused => format!("{:?}", self.current_start_moment),
-            Phase::Work => self.calc_remaining_time(),
 
-        }
-    }
+}
+
+struct RumodoroApp{
+    state: RumodoroState,
+    config: RumodoroConfig,
+}
+
+impl RumodoroApp{
 
     fn calc_remaining_time(&self) -> String{
-       //get the current moment
+        //get the current moment
         //get the current time
         //subtract the one from the other
         "UNKNOWN".to_string()
     }
+    fn display_time(&self) ->String{
+        match self.state.current_phase{
+            Phase::Paused => format!("{:?}", self.state.current_start_moment),
+            Phase::Work | Phase::Break => self.calc_remaining_time(),
+        }
+    }
 }
-
 ///We default to to 25 minutes work, to 5 minute break
 /// TODO put in the extra long push and break
 impl Default for RumodoroConfig {
@@ -214,8 +219,6 @@ fn main() -> Result<()>  {
     let state = RumodoroState {
         current_phase: Phase::Paused,
         current_start_moment: Instant::now(),
-        current_end_moment: None,
-        config: rmd,
     };
 
     AppLauncher::with_window(main_window)
