@@ -1,6 +1,8 @@
-use std::io;
+use std::{fmt, io};
+use std::fmt::Formatter;
 use color_eyre::eyre::{Result};
 use std::sync::Once;
+use std::time::Instant;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use clap::Parser;
@@ -21,7 +23,7 @@ long_about = None,
 
 
 )]
-struct Rumodoro{
+struct RumodoroConfig {
     ///This is the working time, in minutes
     #[clap(short, long, default_value = "25")]
     long_time: u8,
@@ -34,20 +36,47 @@ struct Rumodoro{
 }
 
 ///Possible phases for the clock
-//TODO create phases
-enum Phases{
+#[derive(Debug, Clone)]
+enum Phase{
     Paused, Work, Break,
 
 }
 
+impl fmt::Display for Phase{
+
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result{
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Clone, Data, Lens)]
 struct RumodoroState{
-    current_phase: String,
+    current_phase: Phase,
+    current_start_moment: Instant,
+    current_end_moment: Option<Instant>,
+    config: RumodoroConfig,
+}
+
+impl RumodoroState{
+    fn display_time(&self, rc: RumodoroConfig) ->String{
+        match self.current_phase{
+           Phase::Paused => format!("{:?}", self.current_start_moment),
+            Phase::Work => self.calc_remaining_time(),
+
+        }
+    }
+
+    fn calc_remaining_time(&self) -> String{
+       //get the current moment
+        //get the current time
+        //subtract the one from the other
+        "UNKNOWN".to_string()
+    }
 }
 
 ///We default to to 25 minutes work, to 5 minute break
 /// TODO put in the extra long push and break
-impl Default for Rumodoro{
+impl Default for RumodoroConfig {
     fn default() -> Self {
         Self{
             long_time: 25,
@@ -174,7 +203,7 @@ fn setup(verbose:bool)->Result<()>{
 
 fn main() -> Result<()>  {
     color_eyre::install()?;
-    let rmd = Rumodoro::parse();
+    let rmd = RumodoroConfig::parse();
     setup(rmd.verbose)?;
 
     let main_window = WindowDesc::new(build_root_widget())
@@ -182,7 +211,13 @@ fn main() -> Result<()>  {
         .window_size((400.0, 400.0));
 
 
-    let state = RumodoroState { current_phase: "Paused".into() };
+    let state = RumodoroState {
+        current_phase: Phase::Paused,
+        current_start_moment: Instant::now(),
+        current_end_moment: None,
+        config: rmd,
+    };
+
     AppLauncher::with_window(main_window)
         .launch(state)
         .expect("Failed to launch window, m'sieur");
@@ -216,16 +251,16 @@ fn build_root_widget() -> impl Widget<RumodoroState>{
     //a label that will determine its text based on the current app data
     let label = Label::new(|data: &RumodoroState, _env: &Env| format!("{}!", data.current_phase));
     //a textbox that modifies `name`
-    let textbox = TextBox::new()
-        .with_placeholder("What phase are we in?")
-        .fix_width(200.0)
-        .lens(RumodoroState::current_phase);
+    // let textbox = TextBox::new()
+    //     .with_placeholder("What phase are we in?")
+    //     .fix_width(200.0)
+    //     .lens(RumodoroState::current_phase);
 
     //vertical with padding
     let layout = Flex::column()
         .with_child(label)
-        .with_spacer(20.0)
-        .with_child(textbox);
+        .with_spacer(20.0);
+        // .with_child(textbox);
 
     Align::centered(layout)
 }
