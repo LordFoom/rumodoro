@@ -7,7 +7,7 @@ use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use clap::Parser;
 use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc};
-use druid::widget::{Align, Flex, Label, TextBox};
+use druid::widget::{Align, Button, Flex, Label, TextBox};
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 // use tracing_subscriber::filter::
 // use crossterm::
@@ -259,11 +259,27 @@ fn build_root_widget() -> impl Widget<RumodoroState>{
     //     .fix_width(200.0)
     //     .lens(RumodoroState::current_phase);
 
-    //vertical with padding
+
+    let padding = 1.;
+    let btn_start = Button::new("Start").padding(padding);
+    let btn_stop = Button::new("Stop").padding(padding);
+    let btn_pause = Button::new("Pause").padding(padding);
+    let btn_reset = Button::new("Reset").padding(padding);
+    let btn_quit = Button::new("Quit").padding(padding);
+    //single column with rows with padding
     let layout = Flex::column()
-        .with_child(label)
-        .with_spacer(20.0);
-        // .with_child(textbox);
+        .with_child(
+            Flex::row()
+            .with_child(label))
+        .with_spacer(20.0)
+        .with_spacer(20.0)
+        .with_child(
+            Flex::row()
+            .with_child(btn_start)
+                .with_child(btn_stop)
+                .with_child(btn_pause)
+                .with_child(btn_reset)
+                .with_child(btn_quit));
 
     Align::centered(layout)
 }
