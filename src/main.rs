@@ -6,7 +6,7 @@ use std::time::Instant;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use clap::Parser;
-use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc};
+use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc, FontDescriptor, FontFamily, FontWeight};
 use druid::widget::{Align, Button, Flex, Label, TextBox};
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 // use tracing_subscriber::filter::
@@ -252,7 +252,11 @@ fn main() -> Result<()>  {
 
 fn build_root_widget() -> impl Widget<RumodoroState>{
     //a label that will determine its text based on the current app data
-    let label = Label::new(|data: &RumodoroState, _env: &Env| format!("{}!", data.current_phase));
+    let time_font = FontDescriptor::new(FontFamily::SYSTEM_UI)
+        .with_weight(FontWeight::BOLD)
+        .with_size(90.);
+    let label = Label::new(|data: &RumodoroState, _env: &Env| format!("{}!", data.current_phase))
+    .with_font(time_font);
     //a textbox that modifies `name`
     // let textbox = TextBox::new()
     //     .with_placeholder("What phase are we in?")
@@ -271,7 +275,6 @@ fn build_root_widget() -> impl Widget<RumodoroState>{
         .with_child(
             Flex::row()
             .with_child(label))
-        .with_spacer(20.0)
         .with_spacer(20.0)
         .with_child(
             Flex::row()
