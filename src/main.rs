@@ -6,8 +6,9 @@ use std::time::Instant;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use clap::Parser;
-use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc, FontDescriptor, FontFamily, FontWeight};
+use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc, FontDescriptor, FontFamily, FontWeight, LocalizedString};
 use druid::widget::{Align, Button, Flex, Label, TextBox};
+use druid::widget::LabelText::Localized;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 // use tracing_subscriber::filter::
 // use crossterm::
@@ -57,6 +58,9 @@ struct RumodoroState{
 
 impl RumodoroState{
 
+    pub fn work(&mut self){
+       self.current_phase = Phase::Work;
+    }
 }
 
 struct RumodoroApp{
@@ -116,6 +120,7 @@ fn setup(verbose:bool)->Result<()>{
 
     Ok(())
 }
+
 
 // fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 
@@ -265,7 +270,9 @@ fn build_root_widget() -> impl Widget<RumodoroState>{
 
 
     let padding = 1.;
-    let btn_start = Button::new("Start").padding(padding);
+    let btn_start = Button::new("Start")
+        .padding(padding)
+        .on_click(|_ctx, data:&mut RumodoroState, _env| data.work());
     let btn_stop = Button::new("Stop").padding(padding);
     let btn_pause = Button::new("Pause").padding(padding);
     let btn_reset = Button::new("Reset").padding(padding);
