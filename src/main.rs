@@ -7,30 +7,27 @@ use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use clap::Parser;
 use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc, FontDescriptor, FontFamily, FontWeight, LocalizedString};
-use druid::widget::{Align, Button, Flex, Label, TextBox};
+use druid::widget::{Align, Button, Flex, Label};
 use druid::widget::LabelText::Localized;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 // use tracing_subscriber::filter::
 // use crossterm::
 
 ///Command line struct
-#[derive(Parser, Clone)]
+#[derive(Parser,Debug, Clone)]
 #[clap(
 name = "Rumodoro",
 author = "Foom",
 version = "1.0",
 about = "Pomodoro in the terminal, written in rust",
-long_about = None,
-
-
-)]
+long_about = None, )]
 struct RumodoroConfig {
     ///This is the working time, in minutes
     #[clap(short, long, default_value = "25")]
-    long_time: u8,
+    long_time: f64,
     ///This is the break time, in minutes
     #[clap(short, long, default_value = "5")]
-    short_time: u8,
+    short_time: f64,
     ///verbose, means logs
     #[clap(short, long)]
     verbose: bool,
@@ -54,12 +51,21 @@ impl fmt::Display for Phase{
 struct RumodoroState{
     current_phase: Phase,
     current_start_moment: Instant,
+    current_time: String,
 }
 
 impl RumodoroState{
 
     pub fn work(&mut self){
        self.current_phase = Phase::Work;
+    }
+    pub fn pause(&mut self){
+        self.current_phase = Phase::Paused;
+    }
+    pub fn reset(&mut self){
+        //we go to pause
+        self.current_phase = Phase::Paused;
+        //reset the display string
     }
 }
 
@@ -88,8 +94,8 @@ impl RumodoroApp{
 impl Default for RumodoroConfig {
     fn default() -> Self {
         Self{
-            long_time: 25,
-            short_time: 5,
+            long_time: 25.,
+            short_time: 5.,
             verbose: false,
         }
     }
@@ -224,6 +230,7 @@ fn main() -> Result<()>  {
     let state = RumodoroState {
         current_phase: Phase::Paused,
         current_start_moment: Instant::now(),
+        current_time: format!("{:.4}",rmd.long_time),
     };
 
     AppLauncher::with_window(main_window)
@@ -257,11 +264,18 @@ fn main() -> Result<()>  {
 
 fn build_root_widget() -> impl Widget<RumodoroState>{
     //a label that will determine its text based on the current app data
+    let phase_font = FontDescriptor::new(FontFamily::SYSTEM_UI)
+        .with_weight(FontWeight::BOLD)
+        .with_size(30.);
+    let phase_label = Label::new(|data: &RumodoroState, _env: &Env| format!("{}!", data.current_phase))
+    .with_font(phase_font);
+
+
     let time_font = FontDescriptor::new(FontFamily::SYSTEM_UI)
         .with_weight(FontWeight::BOLD)
         .with_size(90.);
-    let label = Label::new(|data: &RumodoroState, _env: &Env| format!("{}!", data.current_phase))
-    .with_font(time_font);
+    let time_label = Label::new(|data: &RumodoroState, _env: &Env| format!("{}!", data.current_time))
+        .with_font(time_font);
     //a textbox that modifies `name`
     // let textbox = TextBox::new()
     //     .with_placeholder("What phase are we in?")
@@ -273,21 +287,26 @@ fn build_root_widget() -> impl Widget<RumodoroState>{
     let btn_start = Button::new("Start")
         .padding(padding)
         .on_click(|_ctx, data:&mut RumodoroState, _env| data.work());
-    let btn_stop = Button::new("Stop").padding(padding);
-    let btn_pause = Button::new("Pause").padding(padding);
-    let btn_reset = Button::new("Reset").padding(padding);
-    let btn_quit = Button::new("Quit").padding(padding);
+    let btn_stop = Button::new("Stop").padding(padding)
+    .on_click(|_ctx, data:&mut RumodoroState, _env| data.pause());
+    let btn_reset = Button::new("Reset").padding(padding)
+        .on_click(|_ctx, data:&mut RumodoroState, _env| data.reset());
+    let btn_quit = Button::new("Quit").padding(padding)
+        .on_click(|_ctx, data:&mut RumodoroState, _env| data.quit());
     //single column with rows with padding
     let layout = Flex::column()
         .with_child(
             Flex::row()
-            .with_child(label))
+            .with_child(phase_label))
+        .with_child(
+            Flex::row()
+                .with_child(time_label)
+        )
         .with_spacer(20.0)
         .with_child(
             Flex::row()
             .with_child(btn_start)
                 .with_child(btn_stop)
-                .with_child(btn_pause)
                 .with_child(btn_reset)
                 .with_child(btn_quit));
 
