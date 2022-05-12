@@ -6,7 +6,7 @@ use std::time::Instant;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use clap::Parser;
-use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc, FontDescriptor, FontFamily, FontWeight, LocalizedString};
+use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc, FontDescriptor, FontFamily, FontWeight, LocalizedString, Command, commands};
 use druid::widget::{Align, Button, Flex, Label};
 use druid::widget::LabelText::Localized;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
@@ -56,6 +56,9 @@ struct RumodoroState{
 
 impl RumodoroState{
 
+    pub fn start(&mut self){
+       //this will start the time running down....
+    }
     pub fn work(&mut self){
        self.current_phase = Phase::Work;
     }
@@ -66,6 +69,10 @@ impl RumodoroState{
         //we go to pause
         self.current_phase = Phase::Paused;
         //reset the display string
+    }
+
+    pub fn quit(&mut self){
+        self.current_phase = Phase::Break;
     }
 }
 
@@ -292,7 +299,7 @@ fn build_root_widget() -> impl Widget<RumodoroState>{
     let btn_reset = Button::new("Reset").padding(padding)
         .on_click(|_ctx, data:&mut RumodoroState, _env| data.reset());
     let btn_quit = Button::new("Quit").padding(padding)
-        .on_click(|_ctx, data:&mut RumodoroState, _env| data.quit());
+        .on_click(|_ctx, data:&mut RumodoroState, _env| _ctx.submit_command(commands::QUIT_APP));
     //single column with rows with padding
     let layout = Flex::column()
         .with_child(
