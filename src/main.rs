@@ -1,4 +1,5 @@
 use std::{fmt, io};
+use std::collections::HashMap;
 use std::fmt::Formatter;
 use color_eyre::eyre::{Result};
 use std::sync::Once;
@@ -6,6 +7,7 @@ use std::time::Instant;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use clap::Parser;
+use color_eyre::Report;
 use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc, FontDescriptor, FontFamily, FontWeight, LocalizedString, Command, commands};
 use druid::widget::{Align, Button, Flex, Label};
 use druid::widget::LabelText::Localized;
@@ -36,8 +38,7 @@ struct RumodoroConfig {
 ///Possible phases for the clock
 #[derive(Debug, Clone, PartialEq, Data)]
 enum Phase{
-    Paused, Work, Break,
-
+    Work, Break,
 }
 
 impl fmt::Display for Phase{
@@ -52,18 +53,34 @@ struct RumodoroState{
     current_phase: Phase,
     current_start_moment: Instant,
     current_time: String,
+    ///Tracking time?
+    running: bool,
 }
 
 impl RumodoroState{
 
     pub fn start(&mut self){
        //this will start the time running down....
+        match self.current_phase{
+            Phase::Work => self.work(),
+            Phase::Break => self.take_break(),
+        }
+
+        self.running = true;
+        while(self.running){
+
+        }
+    }
+
+    pub fn take_break(&mut self){
+        self.current_phase = Phase::Break;
     }
     pub fn work(&mut self){
        self.current_phase = Phase::Work;
     }
     pub fn pause(&mut self){
         self.current_phase = Phase::Paused;
+        self.running = false;
     }
     pub fn reset(&mut self){
         //we go to pause
@@ -128,95 +145,6 @@ fn setup(verbose:bool)->Result<()>{
 }
 
 
-// fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-
-// fn run_the_jewels<B: Backend>(terminal: &mut Terminal<B>) -> Result<()>{
-//     info!("About to draw...");
-//    loop{
-//        terminal.draw(ui)?;
-//
-//        if let Event::Key(key) = event::read()? {
-//           if let KeyCode::Char('q') = key.code{
-//               return Ok(());
-//           }
-//        }
-//    }
-// }
-
-// fn ui<B: Backend>(f: &mut Frame<B>) {
-//     let size = f.size();
-//
-//     let surround_block = Block::default()
-//         .borders(Borders::ALL)
-//         .title(" Rumodoro ")
-//         .title_alignment(Alignment::Center)
-//         .border_type(BorderType::Double)
-//         .border_style(Style::default().fg(Color::LightCyan));
-//     f.render_widget(surround_block, size);
-//
-//     //we going to put the clock block and the button block in here
-//     let chunks = Layout::default()
-//         .direction(Vertical)
-//         .margin(1)
-//         .constraints([Constraint::Percentage(90), Constraint::Percentage(10)])
-//         .split(f.size());
-//
-//     let clock_block = Block::default()
-//         .borders(Borders::ALL)
-//         // .title("")
-//         .border_style(Style::default().fg(Color::Green))
-//         .border_type(BorderType::Rounded);
-//     f.render_widget(clock_block, chunks[0]);
-//
-//     let btn_clr = Color::LightYellow;
-//     // let buttons_text = ["Start", "Stop", "Reset", "Pause"];//need better mnemonics than just the first one
-//     let mut start_btn = vec![
-//                 Span::styled("[ St", Style::default().fg(btn_clr)),
-//                 Span::styled("a", Style::default().fg(btn_clr).add_modifier(Modifier::UNDERLINED)),
-//                 Span::styled("rt ]", Style::default().fg(btn_clr)),
-//             ];
-//     let mut stop_btn = vec![
-//         Span::styled("[ St", Style::default().fg(btn_clr)),
-//         Span::styled("o", Style::default().fg(btn_clr).add_modifier(Modifier::UNDERLINED)),
-//         Span::styled("p ]", Style::default().fg(btn_clr)),
-//     ];
-//
-//     let mut reset_btn = vec![
-//         Span::styled("[ ", Style::default().fg(btn_clr)),
-//         Span::styled("R", Style::default().fg(btn_clr).add_modifier(Modifier::UNDERLINED)),
-//         Span::styled("eset ]", Style::default().fg(btn_clr)),
-//
-//     ];
-//     let mut quit_btn = vec![
-//         Span::styled("[ ", Style::default().fg(btn_clr)),
-//         Span::styled("Q", Style::default().fg(btn_clr).add_modifier(Modifier::UNDERLINED)),
-//         Span::styled("uit ]", Style::default().fg(btn_clr)),
-//
-//     ];
-//     let mut buttons = Vec::new();
-//     buttons.append(&mut start_btn);
-//     buttons.append(&mut stop_btn);
-//     buttons.append(&mut reset_btn);
-//     buttons.append(&mut quit_btn);
-//
-//     let button_spans = Spans::from(buttons);
-//     //a for start
-//     //o for stop
-//     //r for reset
-//     //p for pause
-//     //and mouse support?
-//     let button_bar = Paragraph::new(button_spans)
-//         .alignment(Alignment::Center)
-//         .block(
-//             Block::default()
-//                 .borders(Borders::ALL)
-//                 .border_style(Style::default().fg(Color::LightRed))
-//                 .border_type(BorderType::Rounded)
-//         );
-//     f.render_widget(button_bar, chunks[1]);
-//
-// }
-
 fn main() -> Result<()>  {
     color_eyre::install()?;
     let rmd = RumodoroConfig::parse();
@@ -231,6 +159,7 @@ fn main() -> Result<()>  {
         current_phase: Phase::Paused,
         current_start_moment: Instant::now(),
         current_time: format!("{:.4}",rmd.long_time),
+        running: false,
     };
 
     AppLauncher::with_window(main_window)
@@ -271,6 +200,7 @@ fn build_root_widget() -> impl Widget<RumodoroState>{
     .with_font(phase_font);
 
 
+    //TODO  put fonts into a config file - also a good excuse to sneak in serde
     let time_font = FontDescriptor::new(FontFamily::SYSTEM_UI)
         .with_weight(FontWeight::BOLD)
         .with_size(90.);
@@ -284,15 +214,17 @@ fn build_root_widget() -> impl Widget<RumodoroState>{
 
 
     let padding = 1.;
+    let btn_1 = Button::new("Hello");
     let btn_start = Button::new("Start")
         .padding(padding)
-        .on_click(|_ctx, data:&mut RumodoroState, _env| data.work());
+        .on_click(|_ctx, data:&mut RumodoroState, _env| data.start());
     let btn_stop = Button::new("Stop").padding(padding)
     .on_click(|_ctx, data:&mut RumodoroState, _env| data.pause());
     let btn_reset = Button::new("Reset").padding(padding)
         .on_click(|_ctx, data:&mut RumodoroState, _env| data.reset());
     let btn_quit = Button::new("Quit").padding(padding)
         .on_click(|_ctx, data:&mut RumodoroState, _env| _ctx.submit_command(commands::QUIT_APP));
+
     //single column with rows with padding
     let layout = Flex::column()
         .with_child(
@@ -312,3 +244,25 @@ fn build_root_widget() -> impl Widget<RumodoroState>{
 
     Align::centered(layout)
 }
+
+// fn create_buttons() -> Result<HashMap<String, dyn Widget<Button<String>>>, Report>{
+//     let padding = 1;
+//     let mut buttons = HashMap::new();
+//     let btn_start = Button::new("Start")
+//         .padding(padding)
+//         .on_click(|_ctx, data:&mut RumodoroState, _env| data.work());
+//     let btn_stop = Button::new("Stop").padding(padding)
+//                                       .on_click(|_ctx, data:&mut RumodoroState, _env| data.pause());
+//     let btn_reset = Button::new("Reset").padding(padding)
+//                                         .on_click(|_ctx, data:&mut RumodoroState, _env| data.reset());
+//     let btn_quit = Button::new("Quit").padding(padding)
+//                                       .on_click(|_ctx, data:&mut RumodoroState, _env| _ctx.submit_command(commands::QUIT_APP));
+//
+//
+//     let mut btn_hash = HashMap::new();
+//     btn_hash.set("btn_start".into(), &btn_start);
+//     btn_hash.set("btn_stop".into(), &btn_stop);
+//     btn_hash.set("btn_reset".into(),&btn_reset);
+//     btn_hash.set("btn_quit".into(), &btn_quit);
+//     Ok(buttons)
+// }
