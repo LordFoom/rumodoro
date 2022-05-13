@@ -74,14 +74,6 @@ impl RumodoroState{
     pub fn quit(&mut self){
         self.current_phase = Phase::Break;
     }
-}
-
-struct RumodoroApp{
-    state: RumodoroState,
-    config: RumodoroConfig,
-}
-
-impl RumodoroApp{
 
     fn calc_remaining_time(&self) -> String{
         //get the current moment
@@ -90,12 +82,13 @@ impl RumodoroApp{
         "UNKNOWN".to_string()
     }
     fn display_time(&self) ->String{
-        match self.state.current_phase{
-            Phase::Paused => format!("{:?}", self.state.current_start_moment),
+        match self.current_phase{
+            Phase::Paused => format!("{:?}", self.current_start_moment),
             Phase::Work | Phase::Break => self.calc_remaining_time(),
         }
     }
 }
+
 ///We default to to 25 minutes work, to 5 minute break
 /// TODO put in the extra long push and break
 impl Default for RumodoroConfig {
