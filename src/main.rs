@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fmt::Formatter;
 use color_eyre::eyre::{Result};
 use std::sync::Once;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use clap::Parser;
@@ -12,6 +12,7 @@ use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc, FontDes
 use druid::widget::{Align, Button, Flex, Label};
 use druid::widget::LabelText::Localized;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
+use std::thread;
 // use tracing_subscriber::filter::
 // use crossterm::
 
@@ -26,10 +27,10 @@ long_about = None, )]
 struct RumodoroConfig {
     ///This is the working time, in minutes
     #[clap(short, long, default_value = "25")]
-    long_time: f64,
+    long_time: u64,
     ///This is the break time, in minutes
     #[clap(short, long, default_value = "5")]
-    short_time: f64,
+    short_time: u64,
     ///verbose, means logs
     #[clap(short, long)]
     verbose: bool,
@@ -53,6 +54,10 @@ struct RumodoroState{
     current_phase: Phase,
     current_start_moment: Instant,
     current_time: String,
+    current_seconds_needed: u64,
+    current_seconds_remaining: u64,
+    long_time: u64,
+    short_time: u64,
     ///Tracking time?
     running: bool,
 }
@@ -60,15 +65,20 @@ struct RumodoroState{
 impl RumodoroState{
 
     pub fn start(&mut self){
-       //this will start the time running down....
-        match self.current_phase{
-            Phase::Work => self.work(),
-            Phase::Break => self.take_break(),
-        }
+        //this will start the time running down....
+        //  match self.current_phase{
+        //      Phase::Work => self.work(),
+        //      Phase::Break => self.take_break(),
+        //  }
 
+        self.current_start_moment = Instant::now();
         self.running = true;
-        while(self.running){
-
+        loop{
+            self.calc_remaining_time();
+            thread::sleep(Duration::from_millis(300));
+            if !self.running {
+                break;
+            }
         }
     }
 
@@ -79,12 +89,11 @@ impl RumodoroState{
        self.current_phase = Phase::Work;
     }
     pub fn pause(&mut self){
-        self.current_phase = Phase::Paused;
         self.running = false;
     }
     pub fn reset(&mut self){
         //we go to pause
-        self.current_phase = Phase::Paused;
+        // self.current_phase = Phase::Paused;
         //reset the display string
     }
 
@@ -92,17 +101,58 @@ impl RumodoroState{
         self.current_phase = Phase::Break;
     }
 
-    fn calc_remaining_time(&self) -> String{
+    fn calc_remaining_time(&mut self) -> String{
+        info!("Calcing that time!");
+        // let ceil = self.current_ceiling;
+        if self.running {
+            let elapsed_secs = self.current_start_moment.elapsed().as_secs();
+            info!("Current remaining Elapsed seconds: {}", elapsed_secs);
+            let current = self.current_seconds_needed.clone();
+            //now we need to subtrack elapsed seconds
+            let mut new_curr =  if  elapsed_secs > current {
+                0
+            }else{
+                current - elapsed_secs
+            };
+            info!("New current: {}", new_curr);
+            if new_curr <= 0 {
+                info!("We stopping?");
+                new_curr = 0;
+               self.running = false;
+            }
+
+            self.current_seconds_remaining = new_curr;
+            self.current_time = self.format_time(new_curr);
+        }
+        return self.current_time.clone();
+        // if self
         //get the current moment
         //get the current time
         //subtract the one from the other
-        "UNKNOWN".to_string()
     }
-    fn display_time(&self) ->String{
-        match self.current_phase{
-            Phase::Paused => format!("{:?}", self.current_start_moment),
-            Phase::Work | Phase::Break => self.calc_remaining_time(),
-        }
+
+    ///Hours, minutes, seconds
+    fn format_time(&self, seconds: u64) -> String{
+       //hours
+        //let's assume no hours...for now
+       //  let hours = seconds/3600;
+       //  let remainder = seconds % 3600;
+       //  let minutes = remainder/60;
+        // let rem_secs = remainder %60;
+        let minutes = seconds/60;
+        let rem_secs = seconds%60;
+        format!("{minutes:0>width$}:{seconds:0>width$}", minutes=minutes, width=2, seconds=rem_secs)
+    }
+
+    fn display_time(&mut self) ->String{
+        // if self.running {
+        //     return format!("{:.4}", self.current_ceiling);
+        // }
+        self.calc_remaining_time()
+        // match self.current_phase{
+        //     Phase::Paused => format!("{:?}", self.current_start_moment),
+        //     Phase::Work | Phase::Break => self.calc_remaining_time(),
+        // }
     }
 }
 
@@ -111,8 +161,8 @@ impl RumodoroState{
 impl Default for RumodoroConfig {
     fn default() -> Self {
         Self{
-            long_time: 25.,
-            short_time: 5.,
+            long_time: 25,
+            short_time: 5,
             verbose: false,
         }
     }
@@ -123,7 +173,7 @@ static INIT: Once = Once::new();
 fn setup(verbose:bool)->Result<()>{
     INIT.call_once(|| {
         let log_level = if verbose {
-            Level::TRACE
+            Level::INFO
         } else {
             Level::ERROR
         };
@@ -156,13 +206,21 @@ fn main() -> Result<()>  {
 
 
     let state = RumodoroState {
-        current_phase: Phase::Paused,
+        current_phase: Phase::Work,
+        //when we started running - the start, after a pause, etc
         current_start_moment: Instant::now(),
         current_time: format!("{:.4}",rmd.long_time),
+        ///how many we want in the current phase
+        current_seconds_needed:  rmd.long_time * 60,
+        ///seconds remaining in current phase
+        current_seconds_remaining:  rmd.long_time * 60,
+        long_time: rmd.long_time,
+        short_time: rmd.short_time,
         running: false,
     };
 
     AppLauncher::with_window(main_window)
+        // .log_to_console()
         .launch(state)
         .expect("Failed to launch window, m'sieur");
 
@@ -214,7 +272,6 @@ fn build_root_widget() -> impl Widget<RumodoroState>{
 
 
     let padding = 1.;
-    let btn_1 = Button::new("Hello");
     let btn_start = Button::new("Start")
         .padding(padding)
         .on_click(|_ctx, data:&mut RumodoroState, _env| data.start());
