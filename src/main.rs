@@ -8,9 +8,6 @@ use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use clap::Parser;
 use color_eyre::Report;
-use druid::{Data, Lens, AppLauncher, Env, Widget, WidgetExt, WindowDesc, FontDescriptor, FontFamily, FontWeight, LocalizedString, Command, commands};
-use druid::widget::{Align, Button, Flex, Label};
-use druid::widget::LabelText::Localized;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 use std::thread;
 // use tracing_subscriber::filter::
@@ -37,7 +34,7 @@ struct RumodoroConfig {
 }
 
 ///Possible phases for the clock
-#[derive(Debug, Clone, PartialEq, Data)]
+#[derive(Debug, Clone, )]
 enum Phase{
     Work, Break,
 }
@@ -49,7 +46,8 @@ impl fmt::Display for Phase{
     }
 }
 
-#[derive(Clone, Data, Lens)]
+// #[derive(Clone, Data, Lens)]
+#[derive(Clone)]
 struct RumodoroState{
     current_phase: Phase,
     current_start_moment: Instant,
@@ -200,9 +198,6 @@ fn main() -> Result<()>  {
     let rmd = RumodoroConfig::parse();
     setup(rmd.verbose)?;
 
-    let main_window = WindowDesc::new(build_root_widget())
-        .title("R U M O D O R O")
-        .window_size((400.0, 400.0));
 
 
     let state = RumodoroState {
@@ -219,107 +214,16 @@ fn main() -> Result<()>  {
         running: false,
     };
 
-    AppLauncher::with_window(main_window)
-        // .log_to_console()
-        .launch(state)
-        .expect("Failed to launch window, m'sieur");
+    MainWindow::new().run();
 
-
-    //enable the app
-    // enable_raw_mode()?;
-    // let mut stdout = io::stdout();
-    // execute!(stdout, EnterAlternateScreen, EnableMouseCapture )?;
-    // let backend = CrosstermBackend::new(stdout);
-    // // // let mut terminal = Terminal::new(backend)?;
-    // let mut terminal = Terminal::new(backend)?;
-    // // create app and run it
-    // let res = run_the_jewels(&mut terminal);
-    // //turn off the app, m'sieur
-    // disable_raw_mode()?;
-    // execute!(
-    //     terminal.backend_mut(),
-    //     LeaveAlternateScreen,
-    //     DisableMouseCapture,
-    // )?;
-    // terminal.show_cursor()?;
-
-    // if let Err(err) = res{
-    //     println!("{:?}", err);
-    // }
     Ok(())
 }
 
-fn build_root_widget() -> impl Widget<RumodoroState>{
-    //a label that will determine its text based on the current app data
-    let phase_font = FontDescriptor::new(FontFamily::SYSTEM_UI)
-        .with_weight(FontWeight::BOLD)
-        .with_size(30.);
-    let phase_label = Label::new(|data: &RumodoroState, _env: &Env| format!("{}!", data.current_phase))
-    .with_font(phase_font);
-
-
-    //TODO  put fonts into a config file - also a good excuse to sneak in serde
-    let time_font = FontDescriptor::new(FontFamily::SYSTEM_UI)
-        .with_weight(FontWeight::BOLD)
-        .with_size(90.);
-    let time_label = Label::new(|data: &RumodoroState, _env: &Env| format!("{}!", data.current_time))
-        .with_font(time_font);
-    //a textbox that modifies `name`
-    // let textbox = TextBox::new()
-    //     .with_placeholder("What phase are we in?")
-    //     .fix_width(200.0)
-    //     .lens(RumodoroState::current_phase);
-
-
-    let padding = 1.;
-    let btn_start = Button::new("Start")
-        .padding(padding)
-        .on_click(|_ctx, data:&mut RumodoroState, _env| data.start());
-    let btn_stop = Button::new("Stop").padding(padding)
-    .on_click(|_ctx, data:&mut RumodoroState, _env| data.pause());
-    let btn_reset = Button::new("Reset").padding(padding)
-        .on_click(|_ctx, data:&mut RumodoroState, _env| data.reset());
-    let btn_quit = Button::new("Quit").padding(padding)
-        .on_click(|_ctx, data:&mut RumodoroState, _env| _ctx.submit_command(commands::QUIT_APP));
-
-    //single column with rows with padding
-    let layout = Flex::column()
-        .with_child(
-            Flex::row()
-            .with_child(phase_label))
-        .with_child(
-            Flex::row()
-                .with_child(time_label)
-        )
-        .with_spacer(20.0)
-        .with_child(
-            Flex::row()
-            .with_child(btn_start)
-                .with_child(btn_stop)
-                .with_child(btn_reset)
-                .with_child(btn_quit));
-
-    Align::centered(layout)
+slint::slint!{
+    MainWindow := Window{
+        Text {
+            text: "hello my creator";
+            color: red;
+        }
+    }
 }
-
-// fn create_buttons() -> Result<HashMap<String, dyn Widget<Button<String>>>, Report>{
-//     let padding = 1;
-//     let mut buttons = HashMap::new();
-//     let btn_start = Button::new("Start")
-//         .padding(padding)
-//         .on_click(|_ctx, data:&mut RumodoroState, _env| data.work());
-//     let btn_stop = Button::new("Stop").padding(padding)
-//                                       .on_click(|_ctx, data:&mut RumodoroState, _env| data.pause());
-//     let btn_reset = Button::new("Reset").padding(padding)
-//                                         .on_click(|_ctx, data:&mut RumodoroState, _env| data.reset());
-//     let btn_quit = Button::new("Quit").padding(padding)
-//                                       .on_click(|_ctx, data:&mut RumodoroState, _env| _ctx.submit_command(commands::QUIT_APP));
-//
-//
-//     let mut btn_hash = HashMap::new();
-//     btn_hash.set("btn_start".into(), &btn_start);
-//     btn_hash.set("btn_stop".into(), &btn_stop);
-//     btn_hash.set("btn_reset".into(),&btn_reset);
-//     btn_hash.set("btn_quit".into(), &btn_quit);
-//     Ok(buttons)
-// }
