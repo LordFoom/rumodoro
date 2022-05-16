@@ -200,19 +200,19 @@ fn main() -> Result<()>  {
 
 
 
-    let state = RumodoroState {
-        current_phase: Phase::Work,
-        //when we started running - the start, after a pause, etc
-        current_start_moment: Instant::now(),
-        current_time: format!("{:.4}",rmd.long_time),
-        ///how many we want in the current phase
-        current_seconds_needed:  rmd.long_time * 60,
-        ///seconds remaining in current phase
-        current_seconds_remaining:  rmd.long_time * 60,
-        long_time: rmd.long_time,
-        short_time: rmd.short_time,
-        running: false,
-    };
+    // let state = RumodoroState {
+    //     current_phase: Phase::Work,
+    //     //when we started running - the start, after a pause, etc
+    //     current_start_moment: Instant::now(),
+    //     current_time: format!("{:.4}",rmd.long_time),
+    //     ///how many we want in the current phase
+    //     current_seconds_needed:  rmd.long_time * 60,
+    //     ///seconds remaining in current phase
+    //     current_seconds_remaining:  rmd.long_time * 60,
+    //     long_time: rmd.long_time,
+    //     short_time: rmd.short_time,
+    //     running: false,
+    // };
 
     MainWindow::new().run();
 
@@ -220,10 +220,18 @@ fn main() -> Result<()>  {
 }
 
 slint::slint!{
+   MemoryTile := Rectangle {
+    width: 64px;
+    height: 64px;
+    background: #3960D5;
+
+    Image {
+        source: @image-url("icons/bus.png");
+        width: parent.width;
+        height: parent.height;
+    }
+}
     MainWindow := Window{
-        Text {
-            text: "hello my creator";
-            color: red;
-        }
+        MemoryTile {}
     }
 }
