@@ -1,18 +1,21 @@
 use std::{fmt, io};
 use std::collections::HashMap;
 use std::fmt::Formatter;
-use color_eyre::eyre::{Result};
 use std::sync::Once;
-use std::time::{Duration, Instant};
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
-use clap::Parser;
-use color_eyre::Report;
-use tracing_subscriber::fmt::writer::MakeWriterExt;
 use std::thread;
+use std::time::{Duration, Instant};
+
+use clap::Parser;
+use color_eyre::eyre::Result;
+use color_eyre::Report;
+use tracing::{info, Level};
+use tracing_subscriber::fmt::writer::MakeWriterExt;
+use tracing_subscriber::FmtSubscriber;
+
 // use tracing_subscriber::filter::
 // use crossterm::
 
+//check out this guy....https://github.com/nagy135/pomodorust/blob/master/src/main.rs
 ///Command line struct
 #[derive(Parser,Debug, Clone)]
 #[clap(
