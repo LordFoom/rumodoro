@@ -8,6 +8,7 @@ use std::time::{Duration, Instant};
 use clap::Parser;
 use color_eyre::eyre::Result;
 use color_eyre::Report;
+use iced::{button, Button, Column, Element, Sandbox, Settings, Text};
 use tracing::{info, Level};
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_subscriber::FmtSubscriber;
@@ -62,6 +63,7 @@ struct RumodoroState{
     ///Tracking time?
     running: bool,
 }
+
 
 impl RumodoroState{
 
@@ -157,8 +159,63 @@ impl RumodoroState{
     }
 }
 
+#[derive(Default)]
+struct Counter{
+    value: i32,
+
+    //local state of the two buttons
+    increment_button: button::State,
+    decrement_button: button::State,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Message{
+    IncrementPressed,
+    DecrementPressed,
+}
+
+impl Sandbox for Counter{
+    fn view(&mut self) -> Element<Message>{
+        Column::new()
+            .push(
+                //produce message when pressed
+                Button::new(&mut self.increment_button, Text::new("+"))
+                    .on_press(Message::IncrementPressed),
+            )
+            .push(
+                //show the vvalue of the counter here
+               Text::new(self.value.to_string()).size(50),
+            )
+            .push(
+                Button::new(&mut self.decrement_button, Text::new("-"))
+                    .on_press(Message::DecrementPressed),
+            )
+            .into()
+    }
+
+    fn update(&mut self,  message: Message){
+        match message{
+            Message::IncrementPressed =>{
+                self.value += 1;
+            }
+            Message::DecrementPressed => {
+                self.value -= 1;
+            }
+        }
+    }
+
+    type Message = Message;
+
+    fn new() -> Self {
+        Self::default()
+    }
+
+    fn title(&self) -> String {
+        String::from("Iced, iced counter")
+    }
+}
+
 ///We default to to 25 minutes work, to 5 minute break
-/// TODO put in the extra long push and break
 impl Default for RumodoroConfig {
     fn default() -> Self {
         Self{
@@ -202,7 +259,7 @@ fn main() -> Result<()>  {
     setup(rmd.verbose)?;
 
 
-
+    Counter::run(Settings::default())?;
     // let state = RumodoroState {
     //     current_phase: Phase::Work,
     //     //when we started running - the start, after a pause, etc
@@ -217,24 +274,7 @@ fn main() -> Result<()>  {
     //     running: false,
     // };
 
-    MainWindow::new().run();
 
     Ok(())
 }
 
-slint::slint!{
-   MemoryTile := Rectangle {
-    width: 64px;
-    height: 64px;
-    background: #3960D5;
-
-    Image {
-        source: @image-url("icons/bus.png");
-        width: parent.width;
-        height: parent.height;
-    }
-}
-    MainWindow := Window{
-        MemoryTile {}
-    }
-}
