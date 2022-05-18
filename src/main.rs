@@ -111,12 +111,11 @@ impl Application for RumodoroState{
 
     fn update(&mut self,  message: Message){
         match message{
-            Message::IncrementPressed =>{
-                self.value += 1;
-            }
-            Message::DecrementPressed => {
-                self.value -= 1;
-            }
+            Message::Start => {},
+            Message::Stop => {},
+            Message::Next => {},
+            Message::Reset => {},
+            Message::Tick => {},
         }
     }
 
