@@ -8,7 +8,8 @@ use std::time::{Duration, Instant};
 use clap::Parser;
 use color_eyre::eyre::Result;
 use color_eyre::Report;
-use iced::{button, Button, Column, Element, Sandbox, Settings, Text};
+use iced::{Application, button, Button, Color, Column, Command, Element, Executor, Sandbox, Settings, Subscription, Text};
+use iced::window::Mode;
 use tracing::{info, Level};
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_subscriber::FmtSubscriber;
@@ -40,7 +41,8 @@ struct RumodoroConfig {
 ///Possible phases for the clock
 #[derive(Debug, Clone, )]
 enum Phase{
-    Work, Break,
+    Work,
+    Rest,
 }
 
 impl fmt::Display for Phase{
@@ -56,108 +58,14 @@ struct RumodoroState{
     current_phase: Phase,
     current_start_moment: Instant,
     current_time: String,
-    current_seconds_needed: u64,
     current_seconds_remaining: u64,
-    long_time: u64,
-    short_time: u64,
+    work_time: u64,
+    short_rest_time: u64,
+    long_rest_time: u64,
     ///Tracking time?
     running: bool,
 }
 
-
-impl RumodoroState{
-
-    pub fn start(&mut self){
-        //this will start the time running down....
-        //  match self.current_phase{
-        //      Phase::Work => self.work(),
-        //      Phase::Break => self.take_break(),
-        //  }
-
-        self.current_start_moment = Instant::now();
-        self.running = true;
-        loop{
-            self.calc_remaining_time();
-            thread::sleep(Duration::from_millis(300));
-            if !self.running {
-                break;
-            }
-        }
-    }
-
-    pub fn take_break(&mut self){
-        self.current_phase = Phase::Break;
-    }
-    pub fn work(&mut self){
-       self.current_phase = Phase::Work;
-    }
-    pub fn pause(&mut self){
-        self.running = false;
-    }
-    pub fn reset(&mut self){
-        //we go to pause
-        // self.current_phase = Phase::Paused;
-        //reset the display string
-    }
-
-    pub fn quit(&mut self){
-        self.current_phase = Phase::Break;
-    }
-
-    fn calc_remaining_time(&mut self) -> String{
-        info!("Calcing that time!");
-        // let ceil = self.current_ceiling;
-        if self.running {
-            let elapsed_secs = self.current_start_moment.elapsed().as_secs();
-            info!("Current remaining Elapsed seconds: {}", elapsed_secs);
-            let current = self.current_seconds_needed.clone();
-            //now we need to subtrack elapsed seconds
-            let mut new_curr =  if  elapsed_secs > current {
-                0
-            }else{
-                current - elapsed_secs
-            };
-            info!("New current: {}", new_curr);
-            if new_curr <= 0 {
-                info!("We stopping?");
-                new_curr = 0;
-               self.running = false;
-            }
-
-            self.current_seconds_remaining = new_curr;
-            self.current_time = self.format_time(new_curr);
-        }
-        return self.current_time.clone();
-        // if self
-        //get the current moment
-        //get the current time
-        //subtract the one from the other
-    }
-
-    ///Hours, minutes, seconds
-    fn format_time(&self, seconds: u64) -> String{
-       //hours
-        //let's assume no hours...for now
-       //  let hours = seconds/3600;
-       //  let remainder = seconds % 3600;
-       //  let minutes = remainder/60;
-        // let rem_secs = remainder %60;
-        let minutes = seconds/60;
-        let rem_secs = seconds%60;
-        format!("{minutes:0>width$}:{seconds:0>width$}", minutes=minutes, width=2, seconds=rem_secs)
-    }
-
-    fn display_time(&mut self) ->String{
-        // if self.running {
-        //     return format!("{:.4}", self.current_ceiling);
-        // }
-        self.calc_remaining_time()
-        // match self.current_phase{
-        //     Phase::Paused => format!("{:?}", self.current_start_moment),
-        //     Phase::Work | Phase::Break => self.calc_remaining_time(),
-        // }
-    }
-}
 
 #[derive(Default)]
 struct Counter{
@@ -170,11 +78,52 @@ struct Counter{
 
 #[derive(Clone, Copy, Debug)]
 enum Message{
-    IncrementPressed,
-    DecrementPressed,
+    Start,
+    Stop,
+    Next,
+    Reset,
+    Tick
 }
 
-impl Sandbox for Counter{
+impl Application for RumodoroState{
+    type Executor = Executor::default;
+    type Message = Message;
+    type Flags = ();
+    fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
+        (
+            Self{
+                current_phase: Phase::Work,
+                running: false,
+                current_start_moment: Instant::now(),
+                work_time: 25,
+                short_rest_time: 5,
+                long_rest_time: 20,
+                current_time: "".into(),
+                current_seconds_remaining: 25*60,
+            },
+            Command::none(),
+        )
+    }
+
+    fn title(&self) -> String {
+        todo!()
+    }
+
+    fn update(&mut self,  message: Message){
+        match message{
+            Message::IncrementPressed =>{
+                self.value += 1;
+            }
+            Message::DecrementPressed => {
+                self.value -= 1;
+            }
+        }
+    }
+
+    fn subscription(&self) -> Subscription<Self::Message> {
+        todo!()
+    }
+
     fn view(&mut self) -> Element<Message>{
         Column::new()
             .push(
@@ -193,25 +142,24 @@ impl Sandbox for Counter{
             .into()
     }
 
-    fn update(&mut self,  message: Message){
-        match message{
-            Message::IncrementPressed =>{
-                self.value += 1;
-            }
-            Message::DecrementPressed => {
-                self.value -= 1;
-            }
-        }
+    fn mode(&self) -> Mode {
+        todo!()
     }
 
-    type Message = Message;
-
-    fn new() -> Self {
-        Self::default()
+    fn background_color(&self) -> Color {
+        todo!()
     }
 
-    fn title(&self) -> String {
-        String::from("Iced, iced counter")
+    fn scale_factor(&self) -> f64 {
+        todo!()
+    }
+
+    fn should_exit(&self) -> bool {
+        todo!()
+    }
+
+    fn run(settings: Settings<Self::Flags>) -> iced::Result where Self: 'static {
+        todo!()
     }
 }
 
