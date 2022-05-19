@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use clap::Parser;
 use color_eyre::eyre::Result;
 use color_eyre::Report;
-use iced::{Application, button, Button, Color, Column, Command, Element, Executor, Sandbox, Settings, Subscription, Text};
+use iced::{alignment, Application, button, Button, Color, Column, Command, Element, Executor, executor, Length, Row, Sandbox, Settings, Subscription, Text};
 use iced::window::Mode;
 use tracing::{info, Level};
 use tracing_subscriber::fmt::writer::MakeWriterExt;
@@ -45,6 +45,12 @@ enum Phase{
     Rest,
 }
 
+#[derive(Clone)]
+enum State{
+    Idle,
+    Ticking{last_tick: Instant}
+}
+
 impl fmt::Display for Phase{
 
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result{
@@ -54,7 +60,7 @@ impl fmt::Display for Phase{
 
 // #[derive(Clone, Data, Lens)]
 #[derive(Clone)]
-struct RumodoroState{
+struct Rumodoro {
     current_phase: Phase,
     current_start_moment: Instant,
     current_time: String,
@@ -63,104 +69,147 @@ struct RumodoroState{
     short_rest_time: u64,
     long_rest_time: u64,
     ///Tracking time?
-    running: bool,
+    state: State,
+    btn_toggle: button::State,
+    btn_next: button::State,
+    btn_reset: button::State,
+    btn_quit: button::State,
 }
 
 
-#[derive(Default)]
-struct Counter{
-    value: i32,
-
-    //local state of the two buttons
-    increment_button: button::State,
-    decrement_button: button::State,
-}
 
 #[derive(Clone, Copy, Debug)]
 enum Message{
-    Start,
-    Stop,
+    Toggle,
     Next,
     Reset,
-    Tick
+    Tick(Instant)
 }
 
-impl Application for RumodoroState{
-    type Executor = Executor::default;
+impl Application for Rumodoro {
+    type Executor = executor::Default;
     type Message = Message;
     type Flags = ();
     fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
         (
             Self{
                 current_phase: Phase::Work,
-                running: false,
+                state: State::Idle,
                 current_start_moment: Instant::now(),
                 work_time: 25,
                 short_rest_time: 5,
                 long_rest_time: 20,
                 current_time: "".into(),
                 current_seconds_remaining: 25*60,
+                btn_next: button::State::new(),
+                btn_toggle: button::State::new(),
+                btn_reset: button::State::new(),
+                btn_quit: button::State::new(),
             },
             Command::none(),
         )
     }
 
     fn title(&self) -> String {
-        todo!()
+        "R U M O D O R O".into()
     }
 
-    fn update(&mut self,  message: Message){
+    fn update(&mut self,  message: Message)->Command<Message>{
         match message{
-            Message::Start => {},
-            Message::Stop => {},
+            Message::Toggle => {},
             Message::Next => {},
             Message::Reset => {},
-            Message::Tick => {},
+            Message::Tick(inst) => {},
         }
+        Command::none()
     }
 
-    fn subscription(&self) -> Subscription<Self::Message> {
-        todo!()
-    }
+    // fn subscription(&self) -> Subscription<Self::Message> {
+    //     // todo!()
+    // }
 
     fn view(&mut self) -> Element<Message>{
+        // Column::new()
+        //     .push(
+        //         //produce message when pressed
+        //         Button::new(&mut self.increment_button, Text::new("+"))
+        //             .on_press(Message::IncrementPressed),
+        //     )
+        //     .push(
+        //         //show the vvalue of the counter here
+        //        Text::new(self.value.to_string()).size(50),
+        //     )
+        //     .push(
+        //         Button::new(&mut self.decrement_button, Text::new("-"))
+        //             .on_press(Message::DecrementPressed),
+        //     )
+        //     .into()
+
+        let button = |state, label, style|{
+            Button::new(state,
+                        Text::new(label)
+                .horizontal_alignment(alignment::Horizontal::Center)
+            )
+                .padding(10)
+                .width(Length::Units(91))
+                .style(style)
+        };
+
+        let toggle_button = {
+            let (label, color) = match self.state{
+                State::Idle => ("Go", style::Button::Primary),
+                State::Ticking{..} => ("Pause", style::Button::Destructive),
+            };
+
+            button(&mut self.btn_toggle,label, color )
+        };
+
+        // let
+        let controls = Row::new()
+            .spacing(20)
+            .push(toggle_button);
+
         Column::new()
             .push(
-                //produce message when pressed
-                Button::new(&mut self.increment_button, Text::new("+"))
-                    .on_press(Message::IncrementPressed),
+                Text::new(format!("{}",self.work_time.clone()))
+                    .size(150),
             )
             .push(
-                //show the vvalue of the counter here
-               Text::new(self.value.to_string()).size(50),
-            )
-            .push(
-                Button::new(&mut self.decrement_button, Text::new("-"))
-                    .on_press(Message::DecrementPressed),
-            )
-            .into()
+                    controls
+            ).into()
     }
 
-    fn mode(&self) -> Mode {
-        todo!()
+
+}
+
+mod style{
+    use iced::{Background, button, Color, Vector};
+    use iced::button::Style;
+
+    pub enum Button{
+        Primary,
+        Secondary,
+        Destructive
     }
 
-    fn background_color(&self) -> Color {
-        todo!()
-    }
+    impl button::StyleSheet for Button{
 
-    fn scale_factor(&self) -> f64 {
-        todo!()
-    }
-
-    fn should_exit(&self) -> bool {
-        todo!()
-    }
-
-    fn run(settings: Settings<Self::Flags>) -> iced::Result where Self: 'static {
-        todo!()
+        fn active(&self) -> Style {
+            Style {
+                background: Some(Background::Color(match self {
+                    Button::Primary => Color::from_rgb(0.17, 0.32, 0.91),
+                    Button::Secondary => Color::from_rgb(0.4, 0.84, 0.8),
+                    Button::Destructive => Color::from_rgb(0.77, 0.11, 0.04),
+                })),
+                border_radius: 11.0,
+                shadow_offset: Vector::new(1.1, 1.1),
+                text_color: Color::WHITE,
+                ..Style::default()
+            }
+        }
     }
 }
+
 
 ///We default to to 25 minutes work, to 5 minute break
 impl Default for RumodoroConfig {
@@ -205,8 +254,8 @@ fn main() -> Result<()>  {
     let rmd = RumodoroConfig::parse();
     setup(rmd.verbose)?;
 
-
-    Counter::run(Settings::default())?;
+    Rumodoro::run(Settings::default())?;
+    // Counter::run(Settings::default())?;
     // let state = RumodoroState {
     //     current_phase: Phase::Work,
     //     //when we started running - the start, after a pause, etc
