@@ -8,11 +8,13 @@ use std::time::{Duration, Instant};
 use clap::Parser;
 use color_eyre::eyre::Result;
 use color_eyre::Report;
-use iced::{alignment, Application, button, Button, Color, Column, Command, Element, Executor, executor, Length, Row, Sandbox, Settings, Subscription, Text};
+use iced::{alignment, Application, button, Button, Color, Column, Command, Container, Element, Executor, executor, Length, Row, Sandbox, Settings, Subscription, Text};
 use iced::window::Mode;
 use tracing::{info, Level};
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_subscriber::FmtSubscriber;
+
+use crate::alignment::Alignment;
 
 // use tracing_subscriber::filter::
 // use crossterm::
@@ -83,6 +85,7 @@ enum Message{
     Toggle,
     Next,
     Reset,
+    Quit,
     Tick(Instant)
 }
 
@@ -119,6 +122,7 @@ impl Application for Rumodoro {
             Message::Toggle => {},
             Message::Next => {},
             Message::Reset => {},
+            Message::Quit => {},
             Message::Tick(inst) => {},
         }
         Command::none()
@@ -144,7 +148,47 @@ impl Application for Rumodoro {
         //             .on_press(Message::DecrementPressed),
         //     )
         //     .into()
-
+        // let button = |state, label, style| {
+        //     Button::new(
+        //         state,
+        //         Text::new(label)
+        //             .horizontal_alignment(alignment::Horizontal::Center),
+        //     )
+        //         .padding(10)
+        //         .width(Length::Units(80))
+        //         .style(style)
+        // };
+        //
+        // let toggle_button = {
+        //     let (label, color) = match self.state {
+        //         State::Idle => ("Start", style::Button::Primary),
+        //         State::Ticking { .. } => ("Stop", style::Button::Destructive),
+        //     };
+        //
+        //     button(&mut self.btn_toggle, label, color).on_press(Message::Toggle)
+        // };
+        //
+        // let reset_button =
+        //     button(&mut self.btn_reset, "Reset", style::Button::Secondary)
+        //         .on_press(Message::Reset);
+        //
+        // let controls = Row::new()
+        //     .spacing(20)
+        //     .push(toggle_button)
+        //     .push(reset_button);
+        //
+        // let content = Column::new()
+        //     .align_items(Alignment::Center)
+        //     .spacing(20)
+        //     // .push(duration)
+        //     .push(controls);
+        //
+        // Container::new(content)
+        //     .width(Length::Fill)
+        //     .height(Length::Fill)
+        //     .center_x()
+        //     .center_y()
+        //     .into()
         let button = |state, label, style|{
             Button::new(state,
                         Text::new(label)
@@ -154,29 +198,52 @@ impl Application for Rumodoro {
                 .width(Length::Units(91))
                 .style(style)
         };
-
-        let toggle_button = {
+        //
+        let toggle_btn = {
             let (label, color) = match self.state{
                 State::Idle => ("Go", style::Button::Primary),
                 State::Ticking{..} => ("Pause", style::Button::Destructive),
             };
 
-            button(&mut self.btn_toggle,label, color )
+            button(&mut self.btn_toggle,label, color ).on_press(Message::Toggle)
         };
 
-        // let
+        let reset_btn = button(&mut self.btn_reset,
+                               "Reset",
+                               style::Button::Secondary).on_press(Message::Reset);
+
+        let next_btn = button(&mut self.btn_next,
+                              "Next",
+                              style::Button::Secondary).on_press(Message::Next);
+        let quit_btn = button(&mut self.btn_quit,
+                              "Quit",
+                              style::Button::Destructive).on_press(Message::Quit);
+        //
+        // // let
         let controls = Row::new()
             .spacing(20)
-            .push(toggle_button);
+            .push(toggle_btn)
+            .push(next_btn)
+            .push(reset_btn)
+            .push(quit_btn);
+        ;
 
-        Column::new()
+        let content = Column::new()
             .push(
                 Text::new(format!("{}",self.work_time.clone()))
                     .size(150),
             )
             .push(
                     controls
-            ).into()
+            );
+
+        Container::new(content)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .center_x()
+            .center_y()
+            .into()
+
     }
 
 
