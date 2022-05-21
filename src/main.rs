@@ -133,62 +133,6 @@ impl Application for Rumodoro {
     // }
 
     fn view(&mut self) -> Element<Message>{
-        // Column::new()
-        //     .push(
-        //         //produce message when pressed
-        //         Button::new(&mut self.increment_button, Text::new("+"))
-        //             .on_press(Message::IncrementPressed),
-        //     )
-        //     .push(
-        //         //show the vvalue of the counter here
-        //        Text::new(self.value.to_string()).size(50),
-        //     )
-        //     .push(
-        //         Button::new(&mut self.decrement_button, Text::new("-"))
-        //             .on_press(Message::DecrementPressed),
-        //     )
-        //     .into()
-        // let button = |state, label, style| {
-        //     Button::new(
-        //         state,
-        //         Text::new(label)
-        //             .horizontal_alignment(alignment::Horizontal::Center),
-        //     )
-        //         .padding(10)
-        //         .width(Length::Units(80))
-        //         .style(style)
-        // };
-        //
-        // let toggle_button = {
-        //     let (label, color) = match self.state {
-        //         State::Idle => ("Start", style::Button::Primary),
-        //         State::Ticking { .. } => ("Stop", style::Button::Destructive),
-        //     };
-        //
-        //     button(&mut self.btn_toggle, label, color).on_press(Message::Toggle)
-        // };
-        //
-        // let reset_button =
-        //     button(&mut self.btn_reset, "Reset", style::Button::Secondary)
-        //         .on_press(Message::Reset);
-        //
-        // let controls = Row::new()
-        //     .spacing(20)
-        //     .push(toggle_button)
-        //     .push(reset_button);
-        //
-        // let content = Column::new()
-        //     .align_items(Alignment::Center)
-        //     .spacing(20)
-        //     // .push(duration)
-        //     .push(controls);
-        //
-        // Container::new(content)
-        //     .width(Length::Fill)
-        //     .height(Length::Fill)
-        //     .center_x()
-        //     .center_y()
-        //     .into()
         let button = |state, label, style|{
             Button::new(state,
                         Text::new(label)
@@ -229,8 +173,9 @@ impl Application for Rumodoro {
         ;
 
         let content = Column::new()
+            .push(Text::new(self.current_phase.to_string()).size(50))
             .push(
-                Text::new(format!("{}",self.work_time.clone()))
+                Text::new(format!("{:.2}",self.work_time.clone() as f32))
                     .size(150),
             )
             .push(
