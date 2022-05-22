@@ -66,7 +66,7 @@ struct Rumodoro {
     current_phase: Phase,
     current_duration: Duration,
     current_time: String,
-    current_phase_as_seconds: f64,
+    current_phase_as_millis: u128,
     work_time: u64,
     short_rest_time: u64,
     long_rest_time: u64,
@@ -103,7 +103,7 @@ impl Application for Rumodoro {
                 short_rest_time: 5,
                 long_rest_time: 20,
                 current_time: "".into(),
-                current_phase_as_seconds: 25.*60.,
+                current_phase_as_millis: 25*60,
                 btn_next: button::State::new(),
                 btn_toggle: button::State::new(),
                 btn_reset: button::State::new(),
@@ -132,18 +132,21 @@ impl Application for Rumodoro {
             Message::Tick(now) => match &mut self.state{
                 State::Ticking{last_tick} =>{
                     //TIME LAPSED
-                    let
-                    let lapsed = self.current_duration.elapsed();
-                    self.current_time = if lapsed > self.current_phase_as_seconds {
+                    self.current_duration += now - *last_tick;
+                    //...why do we do this?? think!
+                    *last_tick = now;
+                    self.current_time = if self.current_duration.as_millis() > self.current_phase_as_millis {
                         //if zero or less, change phase,
                         //change ceiling
                         //reset the seconds to the ceiling
                         "".into()
                     }else{
-                        let remaining_time = self.current_phase_as_seconds - lapsed;
-                        let min:u64 = remaining_time/60;
-                        let seconds = remaining_time % 60;
+                        let remaining_time = self.current_phase_as_millis - self.current_duration.as_millis();
+                        let min_in_millis = (60 * 1000);
+                        let min= remaining_time/ min_in_millis;
+                        let seconds = remaining_time % min_in_millis;
 
+                        "".into()
                     }
 
                 },
