@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use clap::Parser;
 use color_eyre::eyre::Result;
 use color_eyre::Report;
-use iced::{alignment, Application, button, Button, Color, Column, Command, Container, Element, Executor, executor, Length, Row, Sandbox, Settings, Subscription, Text};
+use iced::{alignment, Application, button, Button, Color, Column, Command, Container, Element, Executor, executor, Length, Row, Sandbox, Settings, Subscription, Text, time};
 use iced::window::Mode;
 use tracing::{info, Level};
 use tracing_subscriber::fmt::writer::MakeWriterExt;
@@ -41,7 +41,7 @@ struct RumodoroConfig {
 }
 
 ///Possible phases for the clock
-#[derive(Debug, Clone, )]
+#[derive(Debug, Clone, PartialEq, )]
 enum Phase{
     Work,
     Rest,
@@ -102,8 +102,8 @@ impl Application for Rumodoro {
                 work_time: 25,
                 short_rest_time: 5,
                 long_rest_time: 20,
-                current_time: "".into(),
-                current_phase_as_millis: 25*60,
+                current_time: "25.0000".into(),
+                current_phase_as_millis: 25*60*1000,
                 btn_next: button::State::new(),
                 btn_toggle: button::State::new(),
                 btn_reset: button::State::new(),
@@ -122,9 +122,9 @@ impl Application for Rumodoro {
             Message::Toggle => {
                 match self.state{
                     State::Idle => {
-                       self.state = State::Ticking {
-                           last_tick: Instant::now(),
-                       }
+                        self.state = State::Ticking {
+                            last_tick: Instant::now(),
+                        }
                     },
                     State::Ticking {..} => self.state = State::Idle,
                 }
@@ -135,19 +135,29 @@ impl Application for Rumodoro {
                     self.current_duration += now - *last_tick;
                     //...why do we do this?? think!
                     *last_tick = now;
+                    //if zero or less, change phase,
                     self.current_time = if self.current_duration.as_millis() > self.current_phase_as_millis {
-                        //if zero or less, change phase,
-                        //change ceiling
-                        //reset the seconds to the ceiling
-                        "".into()
+                        if self.current_phase == Phase::Work{
+                            self.current_duration = Duration::default();
+                            self.current_phase = Phase::Rest;
+                            //TODO, need to put a long rest in
+                            self.current_phase_as_millis = self.short_rest_time as u128 *1000;
+                            format!("{:.4}", self.short_rest_time)
+                        }else{
+                            self.current_duration = Duration::default();
+                            self.current_phase = Phase::Work;
+                            self.current_phase_as_millis = self.work_time as u128 * 1000;
+                            format!("{:.4}", self.work_time)
+                        }
                     }else{
                         let remaining_time = self.current_phase_as_millis - self.current_duration.as_millis();
                         let min_in_millis = (60 * 1000);
                         let min= remaining_time/ min_in_millis;
                         let seconds = remaining_time % min_in_millis;
 
-                        "".into()
-                    }
+                        format!("{}:{}", min, seconds)
+                    };
+                    info!("current time getting updated? think it needs to go to view maybe...{}", self.current_time);
 
                 },
                 _ =>{}//if the cabin ain't ticking, no need for kicking
@@ -159,9 +169,14 @@ impl Application for Rumodoro {
         Command::none()
     }
 
-    // fn subscription(&self) -> Subscription<Self::Message> {
-    //     // todo!()
-    // }
+    fn subscription(&self) -> Subscription<Self::Message> {
+        match self.state {
+            State::Idle => Subscription::none(),
+            State::Ticking { .. } => {
+                time::every(Duration::from_millis(10)).map(Message::Tick)
+            }
+        }
+    }
 
     fn view(&mut self) -> Element<Message>{
         let button = |state, label, style|{
@@ -206,7 +221,7 @@ impl Application for Rumodoro {
         let content = Column::new()
             .push(Text::new(self.current_phase.to_string()).size(50))
             .push(
-                Text::new(format!("{:.4}",self.work_time.clone() as f32))
+                Text::new(self.current_time.clone())
                     .size(150),
             )
             .push(
