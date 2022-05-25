@@ -44,7 +44,8 @@ struct RumodoroConfig {
 #[derive(Debug, Clone, PartialEq, )]
 enum Phase{
     Work,
-    Rest,
+    ShortRest,
+    LongRest,
 }
 
 #[derive(Clone)]
@@ -70,7 +71,9 @@ struct Rumodoro {
     work_time: u64,
     short_rest_time: u64,
     long_rest_time: u64,
-    ///Tracking time?
+    ///How many times have we rested, resetting at 4
+    rest_counter: u8,
+    ///Ticking or Idle
     state: State,
     btn_toggle: button::State,
     btn_next: button::State,
@@ -102,6 +105,7 @@ impl Application for Rumodoro {
                 work_time: 25,
                 short_rest_time: 5,
                 long_rest_time: 20,
+                rest_counter: 0,
                 current_time: "25.0000".into(),
                 current_phase_as_millis: 25*60*1000,
                 btn_next: button::State::new(),
@@ -137,17 +141,27 @@ impl Application for Rumodoro {
                     *last_tick = now;
                     //if zero or less, change phase,
                     self.current_time = if self.current_duration.as_millis() > self.current_phase_as_millis {
-                        if self.current_phase == Phase::Work{
-                            self.current_duration = Duration::default();
-                            self.current_phase = Phase::Rest;
-                            //TODO, need to put a long rest in
-                            self.current_phase_as_millis = self.short_rest_time as u128 *1000;
-                            format!("{:.4}", self.short_rest_time)
-                        }else{
-                            self.current_duration = Duration::default();
-                            self.current_phase = Phase::Work;
-                            self.current_phase_as_millis = self.work_time as u128 * 1000;
-                            format!("{:.4}", self.work_time)
+                        self.current_duration = Duration::default();
+                        match self.current_phase{
+                            //TODO have to be able to generalize the below surely
+                           Phase::Work => {
+                               self.rest_counter += 1;
+                               if self.rest_counter<4  {
+                                   self.current_phase = Phase::ShortRest;
+                                   self.current_phase_as_millis = self.short_rest_time as u128 * 1000;
+                                   format!("{:.4}", self.short_rest_time)
+                               }else{
+                                   self.rest_counter = 0;
+                                   self.current_phase = Phase::LongRest;
+                                   self.current_phase_as_millis = self.long_rest_time as u128 * 1000;
+                                   format!("{:.4}", self.long_rest_time)
+                               }
+                           },
+                            Phase::ShortRest | Phase::LongRest=> {
+                                self.current_phase =  Phase::Work;
+                                self.current_phase_as_millis = self.work_time as u128 * 1000;
+                                format!("{:.4}", self.work_time)
+                            },
                         }
                     }else{
                         let remaining_time = self.current_phase_as_millis - self.current_duration.as_millis();
@@ -162,9 +176,31 @@ impl Application for Rumodoro {
                 },
                 _ =>{}//if the cabin ain't ticking, no need for kicking
             },
-            Message::Next => {},
-            Message::Reset => {},
-            Message::Quit => {},
+            Message::Reset => self.current_duration = Duration::default(),
+            Message::Next => {
+                match self.current_phase{
+                    Phase::Work => {
+                        self.rest_counter += 1;
+                        self.current_duration = Duration::default();
+                        if self.rest_counter < 4{
+                            self.current_phase = Phase::ShortRest;
+                            self.current_phase_as_millis = self.short_rest_time as u128 * 1000;
+                        }else{
+                            self.current_phase = Phase::LongRest;
+                            self.current_phase_as_millis = self.long_rest_time as u128 * 1000;
+                            self.rest_counter = 0;
+                        }
+                    },
+                    Phase::ShortRest | Phase::LongRest => {
+                        self.current_phase = Phase::Work;
+                        self.current_phase_as_millis = self.work_time as u128 * 1000;
+                    }
+                }
+
+            },
+            Message::Quit => {
+
+            },
         }
         Command::none()
     }
@@ -211,6 +247,7 @@ impl Application for Rumodoro {
         //
         // // let
         let controls = Row::new()
+            // .width(Length::Units(900))
             .spacing(20)
             .push(toggle_btn)
             .push(next_btn)
@@ -219,6 +256,7 @@ impl Application for Rumodoro {
         ;
 
         let content = Column::new()
+            // .width(Length::Units(1600))
             .push(Text::new(self.current_phase.to_string()).size(50))
             .push(
                 Text::new(self.current_time.clone())
