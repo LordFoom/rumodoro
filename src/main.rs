@@ -19,7 +19,6 @@ use crate::alignment::Alignment;
 // use tracing_subscriber::filter::
 // use crossterm::
 
-//check out this guy....https://github.com/nagy135/pomodorust/blob/master/src/main.rs
 ///Command line struct
 #[derive(Parser,Debug, Clone)]
 #[clap(
@@ -349,7 +348,18 @@ fn main() -> Result<()>  {
     color_eyre::install()?;
     let rmd = RumodoroConfig::parse();
     setup(rmd.verbose)?;
+    use iced::{Settings, window};
 
+    //use the below to setup the settings
+    //THIS IS HOW YOU RESIZE THE APP, DAMN IT TOOK ME LONG TO FIND
+    // let settings = Settings {
+    //     window: window::Settings {
+    //         size: (300,500),
+    //         resizable: true,
+    //         decorations: true,
+    //     },
+    //     ..Default::default()
+    // };
     Rumodoro::run(Settings::default())?;
     // Counter::run(Settings::default())?;
     // let state = RumodoroState {
