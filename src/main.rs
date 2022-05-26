@@ -16,9 +16,9 @@ use tracing_subscriber::FmtSubscriber;
 
 use crate::alignment::Alignment;
 
-// use tracing_subscriber::filter::
-// use crossterm::
+// use tracing_subscriber::filter:: // use crossterm::
 
+const  MIN_AS_MILLIS:u128 = 60 *1000;
 ///Command line struct
 #[derive(Parser,Debug, Clone)]
 #[clap(
@@ -106,7 +106,7 @@ impl Application for Rumodoro {
                 long_rest_time: 20,
                 rest_counter: 0,
                 current_time: "25.0000".into(),
-                current_phase_as_millis: 25*60*1000,
+                current_phase_as_millis: 25*MIN_AS_MILLIS,
                 btn_next: button::State::new(),
                 btn_toggle: button::State::new(),
                 btn_reset: button::State::new(),
@@ -147,26 +147,25 @@ impl Application for Rumodoro {
                                self.rest_counter += 1;
                                if self.rest_counter<4  {
                                    self.current_phase = Phase::ShortRest;
-                                   self.current_phase_as_millis = self.short_rest_time as u128 * 1000;
+                                   self.current_phase_as_millis = self.short_rest_time as u128 * MIN_AS_MILLIS;
                                    format!("{:.4}", self.short_rest_time)
                                }else{
                                    self.rest_counter = 0;
                                    self.current_phase = Phase::LongRest;
-                                   self.current_phase_as_millis = self.long_rest_time as u128 * 1000;
+                                   self.current_phase_as_millis = self.long_rest_time as u128 * MIN_AS_MILLIS;
                                    format!("{:.4}", self.long_rest_time)
                                }
                            },
                             Phase::ShortRest | Phase::LongRest=> {
                                 self.current_phase =  Phase::Work;
-                                self.current_phase_as_millis = self.work_time as u128 * 1000;
+                                self.current_phase_as_millis = self.work_time as u128 *  MIN_AS_MILLIS;
                                 format!("{:.4}", self.work_time)
                             },
                         }
                     }else{
                         let remaining_time = self.current_phase_as_millis - self.current_duration.as_millis();
-                        let min_in_millis = (60 * 1000);
-                        let min= remaining_time/ min_in_millis;
-                        let seconds = remaining_time % min_in_millis;
+                        let min= remaining_time/ MIN_AS_MILLIS;
+                        let seconds = remaining_time % MIN_AS_MILLIS;
 
                         format!("{}:{}", min, seconds)
                     };
@@ -360,7 +359,17 @@ fn main() -> Result<()>  {
     //     },
     //     ..Default::default()
     // };
-    Rumodoro::run(Settings::default())?;
+
+    let settings = Settings {
+        window: window::Settings{
+            size: (500,400),
+            resizable: true,
+            decorations: true,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    Rumodoro::run(settings)?;
     // Counter::run(Settings::default())?;
     // let state = RumodoroState {
     //     current_phase: Phase::Work,
