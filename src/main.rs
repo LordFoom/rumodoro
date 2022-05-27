@@ -1,20 +1,13 @@
-use std::{fmt, io};
-use std::collections::HashMap;
+use std::fmt;
 use std::fmt::Formatter;
 use std::sync::Once;
-use std::thread;
 use std::time::{Duration, Instant};
 
 use clap::Parser;
 use color_eyre::eyre::Result;
-use color_eyre::Report;
-use iced::{alignment, Application, button, Button, Color, Column, Command, Container, Element, Executor, executor, Length, Row, Sandbox, Settings, Subscription, Text, time};
-use iced::window::Mode;
+use iced::{alignment, Application, button, Button, Column, Command, Container, Element, executor, Length, Row, Settings, Subscription, Text, time, window};
 use tracing::{info, Level};
-use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_subscriber::FmtSubscriber;
-
-use crate::alignment::Alignment;
 
 // use tracing_subscriber::filter:: // use crossterm::
 
@@ -121,6 +114,15 @@ impl Application for Rumodoro {
     }
 
     fn update(&mut self,  message: Message)->Command<Message>{
+        let display_time = |start_millis, duration_millis|{
+            // let remaining_time = self.current_phase_as_millis - self.current_duration.as_millis();
+            let remaining_time = start_millis - duration_millis;
+            let min= remaining_time/ MIN_AS_MILLIS;
+            let seconds = remaining_time % MIN_AS_MILLIS;
+
+            format!("{}:{}", min, seconds)
+        };
+
         match message{
             Message::Toggle => {
                 match self.state{
@@ -163,11 +165,7 @@ impl Application for Rumodoro {
                             },
                         }
                     }else{
-                        let remaining_time = self.current_phase_as_millis - self.current_duration.as_millis();
-                        let min= remaining_time/ MIN_AS_MILLIS;
-                        let seconds = remaining_time % MIN_AS_MILLIS;
-
-                        format!("{}:{}", min, seconds)
+                        display_time(self.current_phase_as_millis, self.current_duration.as_millis())
                     };
                     info!("current time getting updated? think it needs to go to view maybe...{}", self.current_time);
 
@@ -182,18 +180,20 @@ impl Application for Rumodoro {
                         self.current_duration = Duration::default();
                         if self.rest_counter < 4{
                             self.current_phase = Phase::ShortRest;
-                            self.current_phase_as_millis = self.short_rest_time as u128 * 1000;
+                            self.current_phase_as_millis = self.short_rest_time as u128 * MIN_AS_MILLIS;
                         }else{
                             self.current_phase = Phase::LongRest;
-                            self.current_phase_as_millis = self.long_rest_time as u128 * 1000;
+                            self.current_phase_as_millis = self.long_rest_time as u128 * MIN_AS_MILLIS;
                             self.rest_counter = 0;
                         }
                     },
                     Phase::ShortRest | Phase::LongRest => {
                         self.current_phase = Phase::Work;
-                        self.current_phase_as_millis = self.work_time as u128 * 1000;
+                        self.current_phase_as_millis = self.work_time as u128 * MIN_AS_MILLIS;
                     }
                 }
+
+                self.current_time = display_time(self.current_phase_as_millis, self.current_duration.as_millis());
 
             },
             Message::Quit => {
@@ -202,6 +202,20 @@ impl Application for Rumodoro {
         }
         Command::none()
     }
+
+    // fn display_time(&self)->String{
+    //     let remaining_time = self.current_phase_as_millis - self.current_duration.as_millis();
+    //     let min= remaining_time/ MIN_AS_MILLIS;
+    //     let seconds = remaining_time % MIN_AS_MILLIS;
+    //
+    //     format!("{}:{}", min, seconds)
+    // }
+    // ///Set the phase's millis and format start time for label
+    // fn set_start_time(&mut self, time_in_min: u128) ->String{
+    //     self.current_phase_as_millis = time_in_min * MIN_AS_MILLIS;
+    //     format!("{:.4}", time_in_min)
+    // }
+
 
     fn subscription(&self) -> Subscription<Self::Message> {
         match self.state {
@@ -251,7 +265,7 @@ impl Application for Rumodoro {
             .push(next_btn)
             .push(reset_btn)
             .push(quit_btn);
-        ;
+
 
         let content = Column::new()
             // .width(Length::Units(1600))
@@ -347,19 +361,8 @@ fn main() -> Result<()>  {
     color_eyre::install()?;
     let rmd = RumodoroConfig::parse();
     setup(rmd.verbose)?;
-    use iced::{Settings, window};
 
     //use the below to setup the settings
-    //THIS IS HOW YOU RESIZE THE APP, DAMN IT TOOK ME LONG TO FIND
-    // let settings = Settings {
-    //     window: window::Settings {
-    //         size: (300,500),
-    //         resizable: true,
-    //         decorations: true,
-    //     },
-    //     ..Default::default()
-    // };
-
     let settings = Settings {
         window: window::Settings{
             size: (500,400),
@@ -369,22 +372,8 @@ fn main() -> Result<()>  {
         },
         ..Default::default()
     };
-    Rumodoro::run(settings)?;
-    // Counter::run(Settings::default())?;
-    // let state = RumodoroState {
-    //     current_phase: Phase::Work,
-    //     //when we started running - the start, after a pause, etc
-    //     current_start_moment: Instant::now(),
-    //     current_time: format!("{:.4}",rmd.long_time),
-    //     ///how many we want in the current phase
-    //     current_seconds_needed:  rmd.long_time * 60,
-    //     ///seconds remaining in current phase
-    //     current_seconds_remaining:  rmd.long_time * 60,
-    //     long_time: rmd.long_time,
-    //     short_time: rmd.short_time,
-    //     running: false,
-    // };
 
+    Rumodoro::run(settings)?;
 
     Ok(())
 }
