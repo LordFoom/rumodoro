@@ -6,7 +6,6 @@ use std::time::{Duration, Instant};
 use clap::Parser;
 use color_eyre::eyre::Result;
 use iced::{alignment, Application, button, Button, Color, Column, Command, Container, Element, executor, Length, Row, Settings, Subscription, Text, time, window};
-use iced::window::Mode;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
@@ -122,7 +121,7 @@ impl Application for Rumodoro {
             let min= remaining_time/ MIN_AS_MILLIS;
             let seconds = remaining_time % MIN_AS_MILLIS;
 
-            format!("{}:{}", min, seconds)
+            format!("{:02}:{:04}", min, seconds)
         };
 
         match message{
@@ -175,7 +174,11 @@ impl Application for Rumodoro {
                 },
                 _ =>{}//if the cabin ain't ticking, no need for kicking
             },
-            Message::Reset => self.current_duration = Duration::default(),
+            Message::Reset => {
+                self.current_duration = Duration::default();
+                // self.update(Message::Tick(Instant::now()));
+                self.current_time = display_time(self.current_phase_as_millis, self.current_duration.as_millis());
+            },
             Message::Next => {
                 match self.current_phase{
                     Phase::Work => {
