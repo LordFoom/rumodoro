@@ -5,7 +5,8 @@ use std::time::{Duration, Instant};
 
 use clap::Parser;
 use color_eyre::eyre::Result;
-use iced::{alignment, Application, button, Button, Column, Command, Container, Element, executor, Length, Row, Settings, Subscription, Text, time, window};
+use iced::{alignment, Application, button, Button, Color, Column, Command, Container, Element, executor, Length, Row, Settings, Subscription, Text, time, window};
+use iced::window::Mode;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
@@ -40,10 +41,11 @@ enum Phase{
     LongRest,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 enum State{
     Idle,
-    Ticking{last_tick: Instant}
+    Ticking{last_tick: Instant},
+    Quit,
 }
 
 impl fmt::Display for Phase{
@@ -132,6 +134,7 @@ impl Application for Rumodoro {
                         }
                     },
                     State::Ticking {..} => self.state = State::Idle,
+                    State::Quit => {},
                 }
             },
             Message::Tick(now) => match &mut self.state{
@@ -197,32 +200,18 @@ impl Application for Rumodoro {
 
             },
             Message::Quit => {
-
+                self.state = State::Quit;
             },
         }
         Command::none()
     }
 
-    // fn display_time(&self)->String{
-    //     let remaining_time = self.current_phase_as_millis - self.current_duration.as_millis();
-    //     let min= remaining_time/ MIN_AS_MILLIS;
-    //     let seconds = remaining_time % MIN_AS_MILLIS;
-    //
-    //     format!("{}:{}", min, seconds)
-    // }
-    // ///Set the phase's millis and format start time for label
-    // fn set_start_time(&mut self, time_in_min: u128) ->String{
-    //     self.current_phase_as_millis = time_in_min * MIN_AS_MILLIS;
-    //     format!("{:.4}", time_in_min)
-    // }
-
-
     fn subscription(&self) -> Subscription<Self::Message> {
         match self.state {
-            State::Idle => Subscription::none(),
+            State::Idle | State::Quit => Subscription::none(),
             State::Ticking { .. } => {
                 time::every(Duration::from_millis(10)).map(Message::Tick)
-            }
+            },
         }
     }
 
@@ -239,7 +228,7 @@ impl Application for Rumodoro {
         //
         let toggle_btn = {
             let (label, color) = match self.state{
-                State::Idle => ("Go", style::Button::Primary),
+                State::Idle | State::Quit => ("Go", style::Button::Primary),
                 State::Ticking{..} => ("Pause", style::Button::Destructive),
             };
 
@@ -288,6 +277,9 @@ impl Application for Rumodoro {
     }
 
 
+    fn should_exit(&self) -> bool {
+      self.state == State::Quit
+    }
 }
 
 mod style{
@@ -378,3 +370,6 @@ fn main() -> Result<()>  {
     Ok(())
 }
 
+fn phase_change_sound(){
+
+}
