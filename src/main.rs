@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, thread};
 use std::fmt::Formatter;
 use std::sync::Once;
 use std::time::{Duration, Instant};
@@ -145,6 +145,8 @@ impl Application for Rumodoro {
                     //if zero or less, change phase,
                     self.current_time = if self.current_duration.as_millis() > self.current_phase_as_millis {
                         self.current_duration = Duration::default();
+                        // play::play("assets/brass.mp3").unwrap();
+                        play_sound_async();
                         match self.current_phase{
                             //TODO have to be able to generalize the below surely
                            Phase::Work => {
@@ -199,6 +201,7 @@ impl Application for Rumodoro {
                     }
                 }
 
+                play_sound_async();
                 self.current_time = display_time(self.current_phase_as_millis, self.current_duration.as_millis());
 
             },
@@ -208,6 +211,7 @@ impl Application for Rumodoro {
         }
         Command::none()
     }
+
 
     fn subscription(&self) -> Subscription<Self::Message> {
         match self.state {
@@ -373,6 +377,9 @@ fn main() -> Result<()>  {
     Ok(())
 }
 
-fn phase_change_sound(){
 
+fn play_sound_async(){
+    thread::spawn(||{
+        play::play("assets/brass.mp3").unwrap();
+    });
 }
